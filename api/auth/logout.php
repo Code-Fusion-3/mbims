@@ -14,7 +14,7 @@ $auth = new Auth();
 $result = $auth->logout();
 
 // Redirect to login page with success message
-header('Location: ../../index.php?logout=1');
+header('Location: ../../index.php?error=logout');
 exit();
 
 ?>

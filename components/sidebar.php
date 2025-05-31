@@ -2,37 +2,59 @@
 $current_user = get_logged_user();
 $current_page = basename($_SERVER['PHP_SELF']);
 
+// Determine the correct path prefix based on current location
+$path_parts = explode('/', $_SERVER['REQUEST_URI']);
+$is_in_common = in_array('common', $path_parts);
+$is_in_admin = in_array('admin', $path_parts);
+$is_in_partner = in_array('partner', $path_parts);
+$is_in_accountant = in_array('accountant', $path_parts);
+
+// Set the correct path prefix
+if ($is_in_common) {
+    $admin_prefix = '../admin/';
+    $partner_prefix = '../partner/';
+    $accountant_prefix = '../accountant/';
+    $common_prefix = '';
+} else {
+    $admin_prefix = '';
+    $partner_prefix = '';
+    $accountant_prefix = '';
+    $common_prefix = '../common/';
+}
+
 // Define menu items based on role
 $menu_items = [];
 
 switch ($current_user['role']) {
     case 'admin':
         $menu_items = [
-            ['name' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'dashboard'],
-            ['name' => 'Users', 'url' => 'users.php', 'icon' => 'users'],
-            ['name' => 'Businesses', 'url' => 'businesses.php', 'icon' => 'business'],
-            ['name' => 'Transactions', 'url' => '../common/transactions.php', 'icon' => 'transactions'],
-            ['name' => 'Categories', 'url' => 'categories.php', 'icon' => 'category'],
-            ['name' => 'Reports', 'url' => 'reports.php', 'icon' => 'reports'],
-            ['name' => 'Settings', 'url' => 'settings.php', 'icon' => 'settings']
+            ['name' => 'Dashboard', 'url' => $admin_prefix . 'dashboard.php', 'icon' => 'dashboard'],
+            ['name' => 'Users', 'url' => $admin_prefix . 'users.php', 'icon' => 'users'],
+            ['name' => 'Businesses', 'url' => $admin_prefix . 'businesses.php', 'icon' => 'business'],
+            ['name' => 'Transactions', 'url' => $common_prefix . 'transactions.php', 'icon' => 'transactions'],
+            ['name' => 'Categories', 'url' => $common_prefix . 'categories.php', 'icon' => 'category'],
+            ['name' => 'Reports', 'url' => $admin_prefix . 'reports.php', 'icon' => 'reports'],
+            ['name' => 'Settings', 'url' => $admin_prefix . 'settings.php', 'icon' => 'settings']
         ];
         break;
     case 'partner':
         $menu_items = [
-            ['name' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'dashboard'],
-            ['name' => 'My Businesses', 'url' => 'businesses.php', 'icon' => 'business'],
-            ['name' => 'Transactions', 'url' => '../common/transactions.php', 'icon' => 'transactions'],
-            ['name' => 'Reports', 'url' => 'reports.php', 'icon' => 'reports'],
-            ['name' => 'Profile', 'url' => 'profile.php', 'icon' => 'profile']
+            ['name' => 'Dashboard', 'url' => $partner_prefix . 'dashboard.php', 'icon' => 'dashboard'],
+            ['name' => 'My Businesses', 'url' => $partner_prefix . 'businesses.php', 'icon' => 'business'],
+            ['name' => 'Transactions', 'url' => $common_prefix . 'transactions.php', 'icon' => 'transactions'],
+            ['name' => 'Categories', 'url' => $common_prefix . 'categories.php', 'icon' => 'category'],
+            ['name' => 'Reports', 'url' => $partner_prefix . 'reports.php', 'icon' => 'reports'],
+            ['name' => 'Profile', 'url' => $partner_prefix . 'profile.php', 'icon' => 'profile']
         ];
         break;
     case 'accountant':
         $menu_items = [
-            ['name' => 'Dashboard', 'url' => 'dashboard.php', 'icon' => 'dashboard'],
-            ['name' => 'Assigned Businesses', 'url' => 'businesses.php', 'icon' => 'business'],
-            ['name' => 'Transactions', 'url' => '../common/transactions.php', 'icon' => 'transactions'],
-            ['name' => 'Reports', 'url' => 'reports.php', 'icon' => 'reports'],
-            ['name' => 'Profile', 'url' => 'profile.php', 'icon' => 'profile']
+            ['name' => 'Dashboard', 'url' => $accountant_prefix . 'dashboard.php', 'icon' => 'dashboard'],
+            ['name' => 'Assigned Businesses', 'url' => $accountant_prefix . 'businesses.php', 'icon' => 'business'],
+            ['name' => 'Transactions', 'url' => $common_prefix . 'transactions.php', 'icon' => 'transactions'],
+            ['name' => 'Categories', 'url' => $common_prefix . 'categories.php', 'icon' => 'category'],
+            ['name' => 'Reports', 'url' => $accountant_prefix . 'reports.php', 'icon' => 'reports'],
+            ['name' => 'Profile', 'url' => $accountant_prefix . 'profile.php', 'icon' => 'profile']
         ];
         break;
 }
