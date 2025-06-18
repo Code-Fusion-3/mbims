@@ -34,7 +34,7 @@ switch ($current_user['role']) {
             ['name' => 'Transactions', 'url' => $common_prefix . 'transactions.php', 'icon' => 'transactions'],
             ['name' => 'Categories', 'url' => $common_prefix . 'categories.php', 'icon' => 'category'],
             ['name' => 'Reports', 'url' => $admin_prefix . 'reports.php', 'icon' => 'reports'],
-            ['name' => 'Settings', 'url' => $admin_prefix . 'settings.php', 'icon' => 'settings']
+            // ['name' => 'Settings', 'url' => $admin_prefix . 'settings.php', 'icon' => 'settings']
         ];
         break;
     case 'partner':

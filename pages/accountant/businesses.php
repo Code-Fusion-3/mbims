@@ -295,7 +295,7 @@ include '../../components/sidebar.php';
                                 </div>
                                 <div class="ml-4">
                                     <div class="text-sm font-medium text-gray-900">
-                                        <a href="business-profile.php?id=<?php echo $business['id']; ?>" 
+                                        <a href="#?id=<?php echo $business['id']; ?>" 
                                            class="hover:text-blue-600">
                                             <?php echo htmlspecialchars($business['name']); ?>
                                         </a>
@@ -350,7 +350,7 @@ include '../../components/sidebar.php';
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex space-x-2">
-                                <a href="business-profile.php?id=<?php echo $business['id']; ?>" 
+                                <a href="#?id=<?php echo $business['id']; ?>" 
                                    class="text-blue-600 hover:text-blue-900" title="View Details">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
