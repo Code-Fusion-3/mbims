@@ -2,7 +2,7 @@
 // Application configuration
 define('APP_NAME', 'MBIMS - Multi-Business Income Management System');
 define('APP_VERSION', '1.0.0');
-define('APP_URL', 'http://localhost:3000/utb/mbims');
+define('APP_URL', 'http://localhost/utb/mbims');
 
 // Security settings
 define('SESSION_TIMEOUT', 3600); // 1 hour

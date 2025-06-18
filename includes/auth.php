@@ -124,13 +124,13 @@ class Auth {
     private function getRedirectUrl($role) {
         switch ($role) {
             case 'admin':
-                return '../pages/admin/dashboard.php';
+                return 'pages/admin/dashboard.php';
             case 'partner':
-                return '../pages/partner/dashboard.php';
+                return 'pages/partner/dashboard.php';
             case 'accountant':
-                return '../pages/accountant/dashboard.php';
+                return 'pages/accountant/dashboard.php';
             default:
-                return '../index.php';
+                return 'index.php';
         }
     }
     

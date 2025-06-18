@@ -503,10 +503,7 @@ include '../../components/sidebar.php';
                             <?php echo format_date($activity['transaction_date']); ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <a href="business-profile.php?id=<?php echo $activity['business_id']; ?>" 
-                               class="hover:text-blue-600">
-                                <?php echo htmlspecialchars($activity['business_name']); ?>
-                            </a>
+                           <?php echo htmlspecialchars($activity['business_name']); ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             <?php echo htmlspecialchars($activity['category_name']); ?>
