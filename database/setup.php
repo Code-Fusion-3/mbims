@@ -25,6 +25,8 @@ class DatabaseSetup
         $this->createCategoriesTable();
         $this->createTransactionsTable();
         $this->createUserBusinessAssignmentsTable();
+        $this->createMessagesTable();
+        $this->createMessageRecipientsTable();
         $this->insertDefaultData();
 
         echo "<h3>Database setup completed successfully!</h3>";
@@ -154,6 +156,47 @@ class DatabaseSetup
         }
     }
 
+    // Create messages table
+    private function createMessagesTable()
+    {
+        $sql = "CREATE TABLE IF NOT EXISTS messages (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            sender_id INT NOT NULL,
+            subject VARCHAR(255) NOT NULL,
+            body TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+        )";
+
+        if (mysqli_query($this->connection, $sql)) {
+            echo "✓ Messages table created successfully<br>";
+        } else {
+            echo "✗ Error creating messages table: " . mysqli_error($this->connection) . "<br>";
+        }
+    }
+
+    // Create message recipients table
+    private function createMessageRecipientsTable()
+    {
+        $sql = "CREATE TABLE IF NOT EXISTS message_recipients (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            message_id INT NOT NULL,
+            recipient_id INT NOT NULL,
+            read_status ENUM('read', 'unread') DEFAULT 'unread',
+            read_at TIMESTAMP NULL DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+            FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE KEY unique_recipient (message_id, recipient_id)
+        )";
+
+        if (mysqli_query($this->connection, $sql)) {
+            echo "✓ Message recipients table created successfully<br>";
+        } else {
+            echo "✗ Error creating message recipients table: " . mysqli_error($this->connection) . "<br>";
+        }
+    }
+
     // Insert default data
     private function insertDefaultData()
     {
@@ -198,7 +241,7 @@ class DatabaseSetup
     {
         echo "<h2>Dropping All Tables...</h2>";
 
-        $tables = ['user_business_assignments', 'transactions', 'categories', 'businesses', 'users'];
+        $tables = ['message_recipients', 'messages', 'user_business_assignments', 'transactions', 'categories', 'businesses', 'users'];
 
         foreach ($tables as $table) {
             $sql = "DROP TABLE IF EXISTS $table";
@@ -215,7 +258,7 @@ class DatabaseSetup
     {
         echo "<h2>Checking Database Tables...</h2>";
 
-        $tables = ['users', 'businesses', 'categories', 'transactions', 'user_business_assignments'];
+        $tables = ['users', 'businesses', 'categories', 'transactions', 'user_business_assignments', 'messages', 'message_recipients'];
 
         foreach ($tables as $table) {
             $sql = "SHOW TABLES LIKE '$table'";

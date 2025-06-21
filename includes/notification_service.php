@@ -194,4 +194,83 @@ HTML;
             $this->sendSMS($phone, $smsMessage);
         }
     }
+
+    private function getNewMessageEmailTemplate($senderName, $subject, $messageBody, $messageUrl)
+    {
+        return <<<HTML
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>New Message on MBIMS</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4;">
+            <table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; margin: 20px auto; border: 1px solid #ddd;">
+                <!-- Header -->
+                <tr>
+                    <td align="center" bgcolor="#007bff" style="padding: 30px 20px; color: #ffffff; font-size: 28px; font-weight: bold;">
+                        You Have a New Message!
+                    </td>
+                </tr>
+                <!-- Body -->
+                <tr>
+                    <td bgcolor="#ffffff" style="padding: 40px 30px;">
+                        <h2 style="color: #333333; margin-top: 0;">New Message from {$senderName}</h2>
+                        <p>You have received a new message on the MBIMS platform.</p>
+                        
+                        <table border="0" cellpadding="10" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #eee; margin-top: 20px; margin-bottom: 20px;">
+                            <tr>
+                                <td style="background-color: #f9f9f9; width: 120px;"><strong>Subject:</strong></td>
+                                <td>{$subject}</td>
+                            </tr>
+                             <tr>
+                                <td style="background-color: #f9f9f9; width: 120px; vertical-align: top;"><strong>Message:</strong></td>
+                                <td style="max-height: 150px; overflow: hidden; text-overflow: ellipsis;">{$messageBody}</td>
+                            </tr>
+                        </table>
+                        
+                        <p>To view the full message and reply, please log in to your account.</p>
+                        
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 30px;">
+                            <tr>
+                                <td align="center">
+                                    <a href="{$messageUrl}" style="background-color: #28a745; color: #ffffff; padding: 15px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                                        View Message
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <!-- Footer -->
+                <tr>
+                    <td bgcolor="#f4f4f4" style="padding: 20px 30px; text-align: center; color: #777; font-size: 12px;">
+                        <p>You received this email because you received a new message on MBIMS.</p>
+                        <p>&copy; " . date('Y') . " MBIMS. All Rights Reserved.</p>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+HTML;
+    }
+
+    public function sendNewMessageNotification($recipientData, $senderName, $subject, $body, $messageId)
+    {
+        $messageUrl = BASE_URL . 'pages/common/messages.php?view=' . $messageId;
+        $truncatedBody = strlen($body) > 100 ? substr($body, 0, 97) . '...' : $body;
+
+        // Send Email
+        if (!empty($recipientData['email'])) {
+            $emailSubject = "New Message from {$senderName}: {$subject}";
+            $htmlMessage = $this->getNewMessageEmailTemplate($senderName, $subject, $truncatedBody, $messageUrl);
+            $this->sendEmail($recipientData['email'], $emailSubject, $htmlMessage);
+        }
+
+        // Send SMS
+        if (!empty($recipientData['phone'])) {
+            $smsMessage = "MBIMS: New message from {$senderName}. Subject: {$subject}. View: {$messageUrl}";
+            $this->sendSMS($recipientData['phone'], $smsMessage);
+        }
+    }
 }
