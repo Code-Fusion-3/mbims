@@ -21,41 +21,41 @@ if (!$conn) {
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['add_transaction'])) {
-        $business_id = (int)$_POST['business_id'];
-        $category_id = (int)$_POST['category_id'];
-        $amount = (float)$_POST['amount'];
+        $business_id = (int) $_POST['business_id'];
+        $category_id = (int) $_POST['category_id'];
+        $amount = (float) $_POST['amount'];
         $type = sanitize_input($_POST['type']);
         $description = sanitize_input($_POST['description']);
         $transaction_date = sanitize_input($_POST['transaction_date']);
-        
+
         $errors = [];
-        
+
         // Validate inputs
         if ($business_id <= 0) {
             $errors[] = "Please select a business";
         }
-        
+
         if ($category_id <= 0) {
             $errors[] = "Please select a category";
         }
-        
+
         if ($amount <= 0) {
             $errors[] = "Amount must be greater than 0";
         }
-        
+
         if (!in_array($type, ['income', 'expense'])) {
             $errors[] = "Invalid transaction type";
         }
-        
+
         if (empty($transaction_date)) {
             $errors[] = "Transaction date is required";
         }
-        
+
         // Check if user has permission to add transactions for this business
         if (!can_manage_business($current_user['id'], $business_id, $current_user['role'])) {
             $errors[] = "You don't have permission to add transactions for this business";
         }
-        
+
         // Verify category type matches transaction type
         $category_check = mysqli_query($conn, "SELECT type FROM categories WHERE id = $category_id AND status = 'active'");
         if (mysqli_num_rows($category_check) > 0) {
@@ -66,11 +66,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else {
             $errors[] = "Invalid category selected";
         }
-        
+
         if (empty($errors)) {
             $sql = "INSERT INTO transactions (business_id, category_id, user_id, amount, type, description, transaction_date) 
                     VALUES ($business_id, $category_id, {$current_user['id']}, $amount, '$type', '$description', '$transaction_date')";
-            
+
             if (mysqli_query($conn, $sql)) {
                 $success_message = "Transaction added successfully!";
             } else {
@@ -80,46 +80,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error_message = implode(', ', $errors);
         }
     }
-    
-    if (isset($_POST['update_transaction'])) {
-        $transaction_id = (int)$_POST['transaction_id'];
-        $category_id = (int)$_POST['category_id'];
-        $amount = (float)$_POST['amount'];
+
+    if (isset($_POST['update_transaction']) && $current_user['role'] !== 'accountant') {
+        $transaction_id = (int) $_POST['transaction_id'];
+        $category_id = (int) $_POST['category_id'];
+        $amount = (float) $_POST['amount'];
         $type = sanitize_input($_POST['type']);
         $description = sanitize_input($_POST['description']);
         $transaction_date = sanitize_input($_POST['transaction_date']);
-        
+
         $errors = [];
-        
+
         // Check if user has permission to edit this transaction
         $transaction_check = mysqli_query($conn, "SELECT business_id, user_id FROM transactions WHERE id = $transaction_id AND status = 'active'");
         if (mysqli_num_rows($transaction_check) > 0) {
             $transaction = mysqli_fetch_assoc($transaction_check);
-            if (!can_manage_business($current_user['id'], $transaction['business_id'], $current_user['role']) && 
-                $transaction['user_id'] != $current_user['id']) {
+            if (
+                !can_manage_business($current_user['id'], $transaction['business_id'], $current_user['role']) &&
+                $transaction['user_id'] != $current_user['id']
+            ) {
                 $errors[] = "You don't have permission to edit this transaction";
             }
         } else {
             $errors[] = "Transaction not found";
         }
-        
+
         // Validate other inputs (same as add)
         if ($category_id <= 0) {
             $errors[] = "Please select a category";
         }
-        
+
         if ($amount <= 0) {
             $errors[] = "Amount must be greater than 0";
         }
-        
+
         if (!in_array($type, ['income', 'expense'])) {
             $errors[] = "Invalid transaction type";
         }
-        
+
         if (empty($transaction_date)) {
             $errors[] = "Transaction date is required";
         }
-        
+
         // Verify category type matches transaction type
         $category_check = mysqli_query($conn, "SELECT type FROM categories WHERE id = $category_id AND status = 'active'");
         if (mysqli_num_rows($category_check) > 0) {
@@ -130,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else {
             $errors[] = "Invalid category selected";
         }
-        
+
         if (empty($errors)) {
             $sql = "UPDATE transactions SET 
                     category_id = $category_id, 
@@ -140,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     transaction_date = '$transaction_date',
                     updated_at = CURRENT_TIMESTAMP
                     WHERE id = $transaction_id";
-            
+
             if (mysqli_query($conn, $sql)) {
                 $success_message = "Transaction updated successfully!";
             } else {
@@ -150,20 +152,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error_message = implode(', ', $errors);
         }
     }
-    
-    if (isset($_POST['delete_transaction'])) {
-        $transaction_id = (int)$_POST['transaction_id'];
-        
+
+    if (isset($_POST['delete_transaction']) && $current_user['role'] !== 'accountant') {
+        $transaction_id = (int) $_POST['transaction_id'];
+
         // Check if user has permission to delete this transaction
         $transaction_check = mysqli_query($conn, "SELECT business_id, user_id FROM transactions WHERE id = $transaction_id AND status = 'active'");
         if (mysqli_num_rows($transaction_check) > 0) {
             $transaction = mysqli_fetch_assoc($transaction_check);
-            if (can_manage_business($current_user['id'], $transaction['business_id'], $current_user['role']) || 
-                $transaction['user_id'] == $current_user['id'] || 
-                $current_user['role'] == 'admin') {
-                
+            if (
+                can_manage_business($current_user['id'], $transaction['business_id'], $current_user['role']) ||
+                $transaction['user_id'] == $current_user['id'] ||
+                $current_user['role'] == 'admin'
+            ) {
+
                 $sql = "UPDATE transactions SET status = 'deleted' WHERE id = $transaction_id";
-                
+
                 if (mysqli_query($conn, $sql)) {
                     $success_message = "Transaction deleted successfully!";
                 } else {
@@ -179,9 +183,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 // Get filter parameters
-$business_filter = isset($_GET['business_id']) ? (int)$_GET['business_id'] : 0;
+$business_filter = isset($_GET['business_id']) ? (int) $_GET['business_id'] : 0;
 $type_filter = isset($_GET['type']) ? sanitize_input($_GET['type']) : '';
-$category_filter = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
+$category_filter = isset($_GET['category_id']) ? (int) $_GET['category_id'] : 0;
 $date_from = isset($_GET['date_from']) ? sanitize_input($_GET['date_from']) : '';
 $date_to = isset($_GET['date_to']) ? sanitize_input($_GET['date_to']) : '';
 $search = isset($_GET['search']) ? sanitize_input($_GET['search']) : '';
@@ -227,7 +231,7 @@ if (!empty($search)) {
 $where_clause = implode(' AND ', $where_conditions);
 
 // Get transactions with pagination
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
 $per_page = 20;
 $offset = ($page - 1) * $per_page;
 
@@ -335,12 +339,14 @@ include '../../components/sidebar.php';
                         <dl>
                             <dt class="text-sm font-medium text-gray-500 truncate">Total Income</dt>
                             <dd class="text-lg font-medium text-green-600">
-                                <?php echo format_currency($summary['total_income'] ?? 0); ?></dd>
+                                <?php echo format_currency($summary['total_income'] ?? 0); ?>
+                            </dd>
                         </dl>
                         <dl>
                             <dt class="text-sm font-medium text-gray-500 truncate">Total Income</dt>
                             <dd class="text-lg font-medium text-green-600">
-                                <?php echo format_currency($summary['total_income'] ?? 0); ?></dd>
+                                <?php echo format_currency($summary['total_income'] ?? 0); ?>
+                            </dd>
                         </dl>
                     </div>
                 </div>
@@ -362,7 +368,8 @@ include '../../components/sidebar.php';
                         <dl>
                             <dt class="text-sm font-medium text-gray-500 truncate">Total Expenses</dt>
                             <dd class="text-lg font-medium text-red-600">
-                                <?php echo format_currency($summary['total_expenses'] ?? 0); ?></dd>
+                                <?php echo format_currency($summary['total_expenses'] ?? 0); ?>
+                            </dd>
                         </dl>
                     </div>
                 </div>
@@ -450,10 +457,10 @@ include '../../components/sidebar.php';
                 <select name="category_id"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">All Categories</option>
-                    <?php 
+                    <?php
                     mysqli_data_seek($categories_result, 0);
-                    while ($category = mysqli_fetch_assoc($categories_result)): 
-                    ?>
+                    while ($category = mysqli_fetch_assoc($categories_result)):
+                        ?>
                     <option value="<?php echo $category['id']; ?>"
                         <?php echo $category_filter == $category['id'] ? 'selected' : ''; ?>>
                         <?php echo htmlspecialchars($category['name']) . ' (' . ucfirst($category['type']) . ')'; ?>
@@ -550,22 +557,20 @@ include '../../components/sidebar.php';
                                 <?php echo ucfirst($transaction['type']); ?>
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             <?php echo htmlspecialchars($transaction['first_name'] . ' ' . $transaction['last_name']); ?>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div class="flex space-x-2">
-                                <?php if (can_edit_transaction($current_user, $transaction)): ?>
-                                <button
-                                    onclick="showEditTransactionModal(<?php echo htmlspecialchars(json_encode($transaction)); ?>)"
-                                    class="text-blue-600 hover:text-blue-900">Edit</button>
-                                <button
-                                    onclick="showDeleteTransactionModal(<?php echo $transaction['id']; ?>, '<?php echo htmlspecialchars($transaction['description']); ?>')"
-                                    class="text-red-600 hover:text-red-900">Delete</button>
-                                <?php else: ?>
-                                <span class="text-gray-400">View Only</span>
-                                <?php endif; ?>
-                            </div>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <?php if ($current_user['role'] !== 'accountant'): ?>
+                            <button
+                                onclick="showEditTransactionModal(<?php echo htmlspecialchars(json_encode($transaction)); ?>)"
+                                class="text-blue-600 hover:text-blue-900">Edit</button>
+                            <button
+                                onclick="showDeleteTransactionModal(<?php echo $transaction['id']; ?>, <?php echo json_encode($transaction['description']); ?>)"
+                                class="text-red-600 hover:text-red-900 ml-4">Delete</button>
+                            <?php else: ?>
+                            <span class="text-xs text-gray-500">Contact Admin/Partner to modify.</span>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php endwhile; ?>
@@ -583,14 +588,18 @@ include '../../components/sidebar.php';
         <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
             <div class="flex-1 flex justify-between sm:hidden">
                 <?php if ($page > 1): ?>
-                <a href="?page=<?php echo ($page - 1); ?>&<?php echo http_build_query(array_filter($_GET, function($key) { return $key != 'page'; }, ARRAY_FILTER_USE_KEY)); ?>"
+                <a href="?page=<?php echo ($page - 1); ?>&<?php echo http_build_query(array_filter($_GET, function ($key) {
+                                 return $key != 'page';
+                             }, ARRAY_FILTER_USE_KEY)); ?>"
                     class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                     Previous
                 </a>
                 <?php endif; ?>
 
                 <?php if ($page < $total_pages): ?>
-                <a href="?page=<?php echo ($page + 1); ?>&<?php echo http_build_query(array_filter($_GET, function($key) { return $key != 'page'; }, ARRAY_FILTER_USE_KEY)); ?>"
+                <a href="?page=<?php echo ($page + 1); ?>&<?php echo http_build_query(array_filter($_GET, function ($key) {
+                                 return $key != 'page';
+                             }, ARRAY_FILTER_USE_KEY)); ?>"
                     class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                     Next
                 </a>
@@ -608,7 +617,9 @@ include '../../components/sidebar.php';
                 <div>
                     <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                         <?php if ($page > 1): ?>
-                        <a href="?page=<?php echo ($page - 1); ?>&<?php echo http_build_query(array_filter($_GET, function($key) { return $key != 'page'; }, ARRAY_FILTER_USE_KEY)); ?>"
+                        <a href="?page=<?php echo ($page - 1); ?>&<?php echo http_build_query(array_filter($_GET, function ($key) {
+                                         return $key != 'page';
+                                     }, ARRAY_FILTER_USE_KEY)); ?>"
                             class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                             <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd"
@@ -619,19 +630,23 @@ include '../../components/sidebar.php';
                         <?php endif; ?>
 
                         <?php
-                        $start_page = max(1, $page - 2);
-                        $end_page = min($total_pages, $page + 2);
-                        
-                        for ($i = $start_page; $i <= $end_page; $i++):
-                        ?>
-                        <a href="?page=<?php echo $i; ?>&<?php echo http_build_query(array_filter($_GET, function($key) { return $key != 'page'; }, ARRAY_FILTER_USE_KEY)); ?>"
+                            $start_page = max(1, $page - 2);
+                            $end_page = min($total_pages, $page + 2);
+
+                            for ($i = $start_page; $i <= $end_page; $i++):
+                                ?>
+                        <a href="?page=<?php echo $i; ?>&<?php echo http_build_query(array_filter($_GET, function ($key) {
+                                       return $key != 'page';
+                                   }, ARRAY_FILTER_USE_KEY)); ?>"
                             class="relative inline-flex items-center px-4 py-2 border text-sm font-medium <?php echo $i == $page ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'; ?>">
                             <?php echo $i; ?>
                         </a>
                         <?php endfor; ?>
 
                         <?php if ($page < $total_pages): ?>
-                        <a href="?page=<?php echo ($page + 1); ?>&<?php echo http_build_query(array_filter($_GET, function($key) { return $key != 'page'; }, ARRAY_FILTER_USE_KEY)); ?>"
+                        <a href="?page=<?php echo ($page + 1); ?>&<?php echo http_build_query(array_filter($_GET, function ($key) {
+                                         return $key != 'page';
+                                     }, ARRAY_FILTER_USE_KEY)); ?>"
                             class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                             <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd"
@@ -668,10 +683,10 @@ include '../../components/sidebar.php';
                     <select name="business_id" required
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Select Business</option>
-                        <?php 
+                        <?php
                         mysqli_data_seek($businesses_result, 0);
-                        while ($business = mysqli_fetch_assoc($businesses_result)): 
-                        ?>
+                        while ($business = mysqli_fetch_assoc($businesses_result)):
+                            ?>
                         <option value="<?php echo $business['id']; ?>">
                             <?php echo htmlspecialchars($business['name']); ?>
                         </option>
@@ -694,10 +709,10 @@ include '../../components/sidebar.php';
                     <select name="category_id" id="add_category" required
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option selected disabled>Select Category</option>
-                        <?php 
+                        <?php
                         mysqli_data_seek($categories_result, 0);
-                        while ($category = mysqli_fetch_assoc($categories_result)): 
-                        ?>
+                        while ($category = mysqli_fetch_assoc($categories_result)):
+                            ?>
                         <option value="<?php echo $category['id']; ?>" data-type="<?php echo $category['type']; ?>">
                             <?php echo htmlspecialchars($category['name']); ?>
                         </option>
@@ -714,7 +729,8 @@ include '../../components/sidebar.php';
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Transaction Date</label>
                     <input type="date" name="transaction_date" value="<?php echo date('Y-m-d'); ?>" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        max="<?php echo date('Y-m-d'); ?>" min="<?php echo date('Y-m-d', strtotime('-3 days')); ?>">
                 </div>
 
                 <div>
@@ -768,10 +784,10 @@ include '../../components/sidebar.php';
                     <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
                     <select name="category_id" id="edit_category" required
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <?php 
+                        <?php
                         mysqli_data_seek($categories_result, 0);
-                        while ($category = mysqli_fetch_assoc($categories_result)): 
-                        ?>
+                        while ($category = mysqli_fetch_assoc($categories_result)):
+                            ?>
                         <option value="<?php echo $category['id']; ?>" data-type="<?php echo $category['type']; ?>">
                             <?php echo htmlspecialchars($category['name']); ?>
                         </option>
@@ -788,7 +804,8 @@ include '../../components/sidebar.php';
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Transaction Date</label>
                     <input type="date" name="transaction_date" id="edit_transaction_date" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        max="<?php echo date('Y-m-d'); ?>" min="<?php echo date('Y-m-d', strtotime('-3 days')); ?>">
                 </div>
 
                 <div>
